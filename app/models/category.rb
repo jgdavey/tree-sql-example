@@ -6,8 +6,10 @@ class Category < ActiveRecord::Base
   has_many :children, :class_name => "Category", :foreign_key => 'parent_id'
 
   def descendents
-    children.map do |child|
-      [child] + child.descendents
-    end.flatten
+    self_and_descendents - [self]
+  end
+
+  def self_and_descendents
+    [self] + children.map(&:self_and_descendents).flatten
   end
 end
