@@ -14,7 +14,7 @@ class Category < ActiveRecord::Base
   end
 
   def self.tree_for(instance)
-    find_by_sql <<-SQL
+    tree_sql =  <<-SQL
       WITH RECURSIVE search_tree(id, path) AS (
           SELECT id, ARRAY[id]
           FROM #{table_name}
@@ -22,11 +22,11 @@ class Category < ActiveRecord::Base
         UNION ALL
           SELECT #{table_name}.id, path || #{table_name}.id
           FROM search_tree
-          JOIN #{table_name} ON #{table_name}.parent_id=search_tree.id
+          JOIN #{table_name} ON #{table_name}.parent_id = search_tree.id
           WHERE NOT #{table_name}.id = ANY(path)
       )
-      SELECT * FROM #{table_name}
-      WHERE id IN (SELECT id FROM search_tree);
+      SELECT id FROM search_tree ORDER BY path
     SQL
+    where("#{table_name}.id IN (#{tree_sql})")
   end
 end
