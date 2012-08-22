@@ -1,1 +1,13 @@
 %h1= category.name
+%p Displaying all cat pictures in this category
+
+%ul
+  - cat_pictures.each do |cat_picture|
+    %li
+      %p
+        Name:
+        = cat_picture.name
+      %p
+        Main Category:
+        = cat_picture.category.name
+

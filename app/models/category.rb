@@ -16,6 +16,10 @@ class Category < ActiveRecord::Base
   end
 
   def self.tree_for(instance)
+    where("#{table_name}.id IN (#{tree_sql_for(instance)})").order("#{table_name}.id")
+  end
+
+  def self.tree_sql_for(instance)
     tree_sql =  <<-SQL
       WITH RECURSIVE search_tree(id, path) AS (
           SELECT id, ARRAY[id]
@@ -29,6 +33,5 @@ class Category < ActiveRecord::Base
       )
       SELECT id FROM search_tree ORDER BY path
     SQL
-    where("#{table_name}.id IN (#{tree_sql})")
   end
 end
