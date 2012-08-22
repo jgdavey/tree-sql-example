@@ -16,22 +16,21 @@ class Category < ActiveRecord::Base
   end
 
   def self.tree_for(instance)
-    where("#{table_name}.id IN (#{tree_sql_for(instance)})").order("#{table_name}.id")
+    where(arel_table[:id].in(tree_sql_for(instance))).order(arel_table[:id])
   end
 
   def self.tree_sql_for(instance)
-    tree_sql =  <<-SQL
-      WITH RECURSIVE search_tree(id, path) AS (
-          SELECT id, ARRAY[id]
-          FROM #{table_name}
-          WHERE id = #{instance.id}
-        UNION ALL
-          SELECT #{table_name}.id, path || #{table_name}.id
-          FROM search_tree
-          JOIN #{table_name} ON #{table_name}.parent_id = search_tree.id
-          WHERE NOT #{table_name}.id = ANY(path)
-      )
-      SELECT id FROM search_tree ORDER BY path
-    SQL
+    tree      = Arel::Table.new(:search_tree)
+    tree_id   = tree[:id]
+    tree_path = tree[:path]
+
+    base_term = where(:id => instance.id).select("#{table_name}.id, ARRAY[id]").arel
+    recursive_term = tree.project(tree_id, "path || #{table_name}.id").from(tree).join(arel_table).on(arel_table[:parent_id].eq(tree_id)).where(Arel::SqlLiteral.new "NOT #{table_name}.id = ANY(path)")
+
+    union = base_term.union(:all, recursive_term)
+
+    as_statement = Arel::Nodes::As.new Arel::SqlLiteral.new("#{tree.name}(id, path)"), union
+
+    arel_table.select_manager.with(:recursive, as_statement).from(tree).project tree_id
   end
 end
