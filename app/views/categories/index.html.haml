@@ -1,0 +1,9 @@
+%h1 Cat Pictures!
+
+%ul
+  - categories.top_level.each do |category|
+    %li
+      = link_to category.name, category
+      %ul
+        - category.children.each do |category|
+          %li= link_to category.name, category

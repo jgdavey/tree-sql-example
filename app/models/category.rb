@@ -5,6 +5,8 @@ class Category < ActiveRecord::Base
   belongs_to :parent, :class_name => "Category"
   has_many :children, :class_name => "Category", :foreign_key => 'parent_id'
 
+  scope :top_level, where(:parent_id => nil)
+
   def descendents
     self_and_descendents - [self]
   end
